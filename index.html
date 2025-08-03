@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adept - AI Exam Prep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        #chat-container::-webkit-scrollbar { width: 6px; }
+        #chat-container::-webkit-scrollbar-track { background: #e2e8f0; }
+        #chat-container::-webkit-scrollbar-thumb { background: #a0aec0; border-radius: 3px;}
+        #chat-container::-webkit-scrollbar-thumb:hover { background: #718096; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in-up { animation: slideInUp 0.5s ease-out; }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="upload-view" class="flex flex-col items-center justify-center min-h-screen p-4 fade-in">
+        <div class="w-full max-w-2xl text-center">
+            <h1 class="text-5xl md:text-6xl font-black text-gray-800 mb-2">Adept</h1>
+            <p class="text-lg md:text-xl text-gray-600 mb-8">Your personal AI study partner. Upload up to 10 documents to begin.</p>
+            
+            <div id="drop-zone" class="relative border-2 border-dashed border-gray-400 rounded-xl p-8 md:p-12 cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.txt" multiple>
+                <div class="flex flex-col items-center">
+                    <svg class="w-16 h-16 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3 17.25V6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5A2.25 2.25 0 0118.75 19.5H5.25A2.25 2.25 0 013 17.25z" />
+                    </svg>
+                    <p class="text-lg font-semibold text-gray-700">Drag & drop your files here</p>
+                    <p class="text-gray-500">or click to select files (up to 10)</p>
+                </div>
+            </div>
+
+            <div id="file-staging-area" class="hidden mt-6 text-left">
+                <h3 class="font-semibold text-gray-700 mb-2">Selected Files:</h3>
+                <ul id="file-list" class="space-y-2"></ul>
+                <div class="flex gap-4 mt-4">
+                    <button id="process-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition">Process Files</button>
+                    <button id="clear-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-300 transition">Clear</button>
+                </div>
+            </div>
+
+            <div id="upload-status" class="mt-4 text-lg font-medium"></div>
+        </div>
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>Built with ❤️ by Prajwal</p>
+        </footer>
+    </div>
+
+    <div id="chat-view" class="hidden h-screen flex flex-col">
+        <header class="bg-white shadow-sm w-full p-4 border-b border-gray-200 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">Adept Session</h2>
+                <p id="filename-display" class="text-sm text-gray-500"></p>
+            </div>
+            <button id="new-session-btn" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition">New Session</button>
+        </header>
+
+        <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6">
+            <div id="message-list" class="space-y-6 max-w-4xl mx-auto"></div>
+        </main>
+
+        <footer class="bg-white/80 backdrop-blur-sm w-full p-4 border-t border-gray-200">
+            <form id="chat-form" class="max-w-4xl mx-auto flex items-center gap-3">
+                <div class="relative flex-1">
+                    <input type="text" id="question-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition pr-12 text-gray-800 placeholder-gray-500" placeholder="Ask a question or use the mic..." autocomplete="off">
+                    <button type="button" id="voice-btn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </button>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition flex items-center justify-center h-12 w-12">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </form>
+            <p class="text-center text-gray-500 text-xs mt-2">Built with ❤️ by Prajwal</p>
+        </footer>
+    </div>
+
+    <script>
+        const uploadView = document.getElementById('upload-view');
+        const chatView = document.getElementById('chat-view');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadStatus = document.getElementById('upload-status');
+        const filenameDisplay = document.getElementById('filename-display');
+        const newSessionBtn = document.getElementById('new-session-btn');
+        const chatForm = document.getElementById('chat-form');
+        const questionInput = document.getElementById('question-input');
+        const messageList = document.getElementById('message-list');
+        const chatContainer = document.getElementById('chat-container');
+        const voiceBtn = document.getElementById('voice-btn');
+        const fileStagingArea = document.getElementById('file-staging-area');
+        const fileList = document.getElementById('file-list');
+        const processBtn = document.getElementById('process-btn');
+        const clearBtn = document.getElementById('clear-btn');
+
+        let sessionId = null;
+        let chatHistory = [];
+        let recognition = null;
+        let stagedFiles = [];
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            handleFileSelection(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => {
+            handleFileSelection(fileInput.files);
+        });
+        newSessionBtn.addEventListener('click', () => window.location.reload());
+        chatForm.addEventListener('submit', handleChatSubmit);
+        voiceBtn.addEventListener('click', toggleVoiceRecognition);
+        processBtn.addEventListener('click', processStagedFiles);
+        clearBtn.addEventListener('click', clearStagedFiles);
+
+        function handleFileSelection(files) {
+            uploadStatus.textContent = '';
+            const newFiles = Array.from(files);
+            
+            const currentFileNames = new Set(stagedFiles.map(f => f.name));
+            const uniqueNewFiles = newFiles.filter(f => !currentFileNames.has(f.name));
+
+            stagedFiles = [...stagedFiles, ...uniqueNewFiles];
+
+            if (stagedFiles.length > 10) {
+                uploadStatus.textContent = 'Error: You can upload a maximum of 10 files.';
+                uploadStatus.classList.add('text-red-500');
+                stagedFiles = stagedFiles.slice(0, 10); // Trim back to the limit
+            }
+            
+            updateStagedFilesUI();
+        }
+
+        function removeStagedFile(fileName) {
+            stagedFiles = stagedFiles.filter(f => f.name !== fileName);
+            updateStagedFilesUI();
+        }
+
+        function updateStagedFilesUI() {
+            if (stagedFiles.length === 0) {
+                fileStagingArea.classList.add('hidden');
+                return;
+            }
+            
+            fileList.innerHTML = '';
+            stagedFiles.forEach(file => {
+                const li = document.createElement('li');
+                li.className = 'bg-gray-100 p-2 rounded-md text-sm text-gray-800 flex justify-between items-center';
+                
+                const fileNameSpan = document.createElement('span');
+                fileNameSpan.textContent = file.name;
+                li.appendChild(fileNameSpan);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '✖';
+                removeBtn.className = 'text-red-500 hover:text-red-700 font-bold ml-2';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeStagedFile(file.name);
+                };
+                li.appendChild(removeBtn);
+
+                fileList.appendChild(li);
+            });
+            fileStagingArea.classList.remove('hidden');
+        }
+
+        function clearStagedFiles() {
+            stagedFiles = [];
+            fileInput.value = '';
+            updateStagedFilesUI();
+            uploadStatus.textContent = '';
+        }
+
+        async function processStagedFiles() {
+            if (stagedFiles.length === 0) {
+                uploadStatus.textContent = 'Error: Please select files to process.';
+                uploadStatus.classList.add('text-red-500');
+                return;
+            }
+
+            uploadStatus.textContent = `Processing ${stagedFiles.length} file(s)...`;
+            uploadStatus.classList.remove('text-red-500');
+            uploadStatus.classList.add('text-blue-600');
+
+            const formData = new FormData();
+            for (const file of stagedFiles) {
+                formData.append('file', file);
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+                sessionId = data.session_id;
+                filenameDisplay.textContent = `Studying ${stagedFiles.length} documents`;
+                uploadView.classList.add('hidden');
+                chatView.classList.remove('hidden');
+                chatView.classList.add('flex', 'flex-col');
+                addMessage(`Your documents are ready. Ask me anything to get started.`, 'ai');
+            } catch (error) {
+                uploadStatus.textContent = `Error: ${error.message}`;
+                uploadStatus.classList.add('text-red-500');
+            }
+        }
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const question = questionInput.value.trim();
+            if (!question || !sessionId) return;
+
+            addMessage(question, 'human');
+            questionInput.value = '';
+            
+            const aiMessageElement = addMessage('', 'ai');
+            const answerContentElement = aiMessageElement.querySelector('.answer-content');
+            
+            const params = new URLSearchParams({
+                question: question,
+                session_id: sessionId,
+                chat_history: JSON.stringify(chatHistory)
+            });
+
+            const eventSource = new EventSource(`http://127.0.0.1:5000/ask?${params.toString()}`);
+
+            let fullAnswer = '';
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'answer') {
+                    fullAnswer += data.content;
+                    answerContentElement.innerHTML = parseAnswer(fullAnswer);
+                } else if (data.type === 'sources') {
+                    addSources(aiMessageElement, data.sources);
+                    chatHistory.push({ human: question, ai: fullAnswer });
+                    if (chatHistory.length > 5) chatHistory.shift();
+                    eventSource.close();
+                } else if (data.type === 'error') {
+                    answerContentElement.innerHTML = `<span class="text-red-500 font-semibold">Error: ${data.content}</span>`;
+                    eventSource.close();
+                }
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            };
+
+            eventSource.onerror = function() {
+                addMessage('A connection error occurred. Please try again.', 'error');
+                eventSource.close();
+            };
+        }
+
+        function addMessage(text, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex items-start gap-3 max-w-3xl slide-in-up ${sender === 'human' ? 'ml-auto justify-end' : ''}`;
+
+            const icon = document.createElement('div');
+            icon.className = `h-9 w-9 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-white ${sender === 'human' ? 'bg-gray-700' : 'bg-blue-600'}`;
+            icon.textContent = sender === 'human' ? 'U' : 'AI';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = `p-4 rounded-lg shadow-md border text-base w-full ${sender === 'human' ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'}`;
+            
+            const answerContent = document.createElement('div');
+            answerContent.className = 'answer-content';
+            answerContent.innerHTML = parseAnswer(text);
+            messageContent.appendChild(answerContent);
+
+            if (sender === 'human') {
+                messageWrapper.append(messageContent, icon);
+            } else {
+                messageWrapper.append(icon, messageContent);
+            }
+            messageList.appendChild(messageWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageContent;
+        }
+
+        function addSources(messageElement, sources) {
+            if (sources.length > 0) {
+                const sourcesContainer = document.createElement('div');
+                sourcesContainer.className = 'mt-4 pt-3 border-t border-gray-200';
+                const sourcesHeader = document.createElement('h4');
+                sourcesHeader.className = 'text-sm font-semibold mb-2 text-gray-600';
+                sourcesHeader.textContent = 'Sources Used:';
+                sourcesContainer.appendChild(sourcesHeader);
+
+                const sourcesList = document.createElement('div');
+                sourcesList.className = 'flex flex-wrap gap-2';
+                sources.forEach(source => {
+                    const sourceTag = document.createElement('div');
+                    sourceTag.className = 'source-tag bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer border border-gray-300';
+                    sourceTag.textContent = source.source;
+                    sourceTag.title = `Click to view content:\n\n${source.content}`;
+                    sourceTag.onclick = () => alert(`Source: ${source.source}\n\nContent:\n${source.content}`);
+                    sourcesList.appendChild(sourceTag);
+                });
+                sourcesContainer.appendChild(sourcesList);
+                messageElement.appendChild(sourcesContainer);
+            }
+        }
+
+        function parseAnswer(text) {
+            let html = text.trim();
+            html = html.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/\[Source: (.*?)\]/g, '<span class="mt-2 inline-block bg-gray-100 text-gray-600 text-xs font-semibold px-2 py-1 rounded-md border border-gray-200">$1</span>');
+            html = html.replace(/^\s*[\*-]\s(.*)/gm, '<temp-li>$1</temp-li>');
+            html = html.replace(/(<temp-li>.*<\/temp-li>\s*)+/g, '<ul class="list-disc list-inside space-y-1 mt-2">$&</ul>');
+            html = html.replace(/<temp-li>/g, '<li>').replace(/<\/temp-li>/g, '</li>');
+            html = html.replace(/^\s*\d+\.\s(.*)/gm, '<temp-oli>$1</temp-oli>');
+            html = html.replace(/(<temp-oli>.*<\/temp-oli>\s*)+/g, '<ol class="list-decimal list-inside space-y-1 mt-2">$&</ol>');
+            html = html.replace(/<temp-oli>/g, '<li>').replace(/<\/temp-oli>/g, '</li>');
+            return html.replace(/\n/g, '<br>');
+        }
+
+        function toggleVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert('Voice recognition is not supported in your browser. Try Chrome or Edge.');
+                return;
+            }
+
+            const voiceIcon = voiceBtn.querySelector('svg');
+            
+            if (recognition && recognition.isListening) {
+                recognition.stop();
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onstart = function() {
+                voiceIcon.classList.add('text-blue-600');
+                questionInput.placeholder = "Listening...";
+                recognition.isListening = true;
+            };
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                questionInput.value = transcript;
+                questionInput.focus();
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Voice recognition error', event.error);
+            };
+            
+            recognition.onend = function() {
+                voiceIcon.classList.remove('text-blue-600');
+                questionInput.placeholder = "Ask a question or use the mic...";
+                recognition.isListening = false;
+            };
+            
+            recognition.start();
+        }
+    </script>
+</body>
+</html>
